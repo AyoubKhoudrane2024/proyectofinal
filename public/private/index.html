@@ -2,186 +2,347 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Explorador</title>
+  <title>Explorador de Archivos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    /* Estilos generales para el HTML y BODY */
+    html, body {
+        height: 100%; /* Muy importante: asegura que html y body ocupen el 100% de la altura */
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background-image: url('fon.jpg');
+        background-size: cover; /* Para que la imagen cubra todo el fondo */
+        background-attachment: fixed; /* Para que la imagen de fondo no se mueva al hacer scroll */
+        display: flex; /* Habilita Flexbox en el body */
+        flex-direction: column; /* Apila los elementos en columna */
+        min-height: 100vh; /* Asegura que el body ocupe al menos el 100% de la altura del viewport */
+    }
+
+   
+    .container {
+        flex-grow: 1; 
+        
+    }
+
+    h2{
+        font-family: 'Montserrat', sans-serif;
+        font-size: 3em;
+        text-align: center;
+        margin-top: 50px;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        padding-bottom: 10px;
+        border-bottom: 2px solid #007bff;
+        color: #f1f1f1;
+    }
+
+    
+    footer.bg-body-tertiary {
+        width: 100%; 
+        margin-top: auto;
+    }
+
+    /* Estilos para los elementos del breadcrumb */
+.breadcrumb-item {
+    font-family: 'Montserrat', sans-serif; /* Tu fuente */
+    font-size: 1em; /* Tamaño estándar */
+    padding: 0.4em 0.7em; /* Relleno para el efecto botón */
+    border-radius: 4px; /* Bordes suaves */
+    transition: background-color 0.2s ease, color 0.2s ease; /* Transición rápida */
+    display: inline-block; /* Necesario para el padding */
+    vertical-align: middle; /* Alineación */
+}
+
+/* Color y estilo para el texto de los botones */
+.breadcrumb-item a {
+    color: #f1f1f1; /* Texto claro */
+    text-decoration: none; /* Sin subrayado */
+    font-weight: bold;
+}
+
+/* Efecto al pasar el ratón */
+.breadcrumb-item a:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Fondo sutil al hover */
+    color: #007bff; /* Texto azul al hover */
+}
+
+/* Estilo para el botón activo (la página actual) */
+.breadcrumb-item.active {
+    background-color: rgba(255, 255, 255, 0.1); /* Fondo sutil para el activo */
+    color: #007bff; /* Texto azul para el activo */
+    font-weight: bold; /* Negrita */
+    cursor: default; /* No clicable */
+}
+
+/* Estilo para el separador (el símbolo entre los botones) */
+.breadcrumb-item + .breadcrumb-item::before {
+    content: '>'; /* Flecha como separador */
+    color: #ccc; /* Gris claro */
+    padding: 0 0.5em; /* Espaciado */
+    vertical-align: middle; /* Alineación */
+}
+  </style>
 </head>
 <body class="bg-light">
-<div class="container py-4">
-  <h2>Explorador de Archivos</h2>
 
-  <nav><ol class="breadcrumb" id="breadcrumb"></ol></nav>
+    <div class="container py-4">
+        <h2>Explorador de Archivos</h2>
 
-  <div class="mb-3 d-flex gap-2 flex-wrap">
-    <input type="file" id="fileInput" multiple class="form-control w-auto">
-    <button class="btn btn-primary" onclick="uploadFiles()">Subir</button>
-    <button class="btn btn-success" onclick="createFolder()">Nueva Carpeta</button>
-    <button class="btn btn-warning" id="pasteBtn" onclick="pasteItem()" disabled>Pegar</button>
-  </div>
+        <nav><ol class="breadcrumb" id="migasPan"></ol></nav>
 
-  <div id="statusMessage" class="mb-2"></div>
-  <ul id="fileList" class="list-group"></ul>
-</div>
+        <div class="mb-3 d-flex gap-2 flex-wrap">
+            <input type="file" id="selectorArchivos" multiple class="form-control w-auto">
+            <button class="btn btn-primary" onclick="subirArchivos()">Subir</button>
+            <button class="btn btn-success" onclick="crearCarpeta()">Nueva Carpeta</button>
+            <button class="btn btn-warning" id="botonPegar" onclick="pegarElemento()" disabled>Pegar</button>
+        </div>
 
-<!-- Modal correo -->
-<div class="modal fade" id="emailModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Enviar por correo</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="email" id="recipientEmail" class="form-control mb-2" placeholder="Correo">
-        <textarea id="emailMessage" class="form-control" rows="3" placeholder="Mensaje opcional"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn btn-primary" onclick="sendFileByEmail()">Enviar</button>
-      </div>
+        <div id="mensajeEstado" class="mb-2"></div>
+        <ul id="listaArchivos" class="list-group"></ul>
+        
+        <a href="/logout" class="btn btn-danger mt-4">
+  <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+</a>
+        </div>
+
+    <div class="modal fade" id="modalCorreo">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Enviar por correo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="email" id="correoDestinatario" class="form-control mb-2" placeholder="Correo electrónico">
+                    <textarea id="mensajeCorreo" class="form-control" rows="3" placeholder="Mensaje (opcional)"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary" onclick="enviarArchivoPorCorreo()">Enviar</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-let currentPath = '', clipboard = null, selectedFileForEmail = '', emailModal = new bootstrap.Modal('#emailModal');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let rutaActual = '';
+        let portapapeles = null;
+        let archivoSeleccionadoCorreo = '';
+        const modalCorreo = new bootstrap.Modal('#modalCorreo');
 
-function updateBreadcrumb(path) {
-  const breadcrumb = document.getElementById('breadcrumb');
-  breadcrumb.innerHTML = '';
-  const parts = path.split('/').filter(Boolean);
-  let built = '';
-  breadcrumb.innerHTML += `<li class='breadcrumb-item'><a href='#' onclick="navigateTo('')">Inicio</a></li>`;
-  parts.forEach((p, i) => {
-    built += '/' + p;
-    breadcrumb.innerHTML += `<li class='breadcrumb-item${i === parts.length - 1 ? ' active' : ''}'>${i === parts.length - 1 ? p : `<a href='#' onclick=\"navigateTo('${built.slice(1)}')\">${p}</a>`}</li>`;
-  });
-}
+        function actualizarMigasPan(ruta) {
+            const contenedorMigas = document.getElementById('migasPan');
+            contenedorMigas.innerHTML = '';
+            const partes = ruta.split('/').filter(p => p);
+            let rutaAcumulada = '';
+            
+            contenedorMigas.innerHTML += `<li class='breadcrumb-item'><a href='#' onclick="navegarA('')">Inicio</a></li  >`;
+            
+            partes.forEach((parte, indice) => {
+                rutaAcumulada += '/' + parte;
+                const esUltimo = indice === partes.length - 1;
+                contenedorMigas.innerHTML += `
+                <li class='breadcrumb-item${esUltimo ? ' active' : ''}'>
+                    ${esUltimo ? parte : `<a href='#' onclick="navegarA('${rutaAcumulada.slice(1)}')">${parte}</a>`}
+                </li>
+                `;
+            });
+        }
 
-async function navigateTo(path = '') {
-  currentPath = path;
-  updateBreadcrumb(path);
-  const res = await fetch(`/list?path=${encodeURIComponent(path)}`);
-  const items = await res.json();
-  const list = document.getElementById('fileList');
-  list.innerHTML = items.length === 0 ? '<li class="list-group-item">(Vacío)</li>' : '';
-  items.forEach(i => {
-    const li = document.createElement('li');
-    li.className = 'list-group-item d-flex justify-content-between';
-    li.innerHTML = `<span style='cursor:pointer' ${i.type === 'directory' ? `onclick="navigateTo('${i.path}')" class='fw-bold'` : ''}>${i.name}</span>
-    <span class="btn-group btn-group-sm">
-      <button class='btn btn-outline-secondary' onclick="copyToClipboard(event, '${i.path}')">Copiar</button>
-      <button class='btn btn-outline-info' onclick="renameItem('${i.path}')">Renombrar</button>
-      <button class='btn btn-outline-primary' onclick="openEmailModal('${i.path}')">Enviar</button>
-      <button class='btn btn-outline-danger' onclick="deleteItem(event, '${i.path}')">Eliminar</button>
-    </span>`;
-    list.appendChild(li);
-  });
-}
+        async function navegarA(ruta = '') {
+            rutaActual = ruta;
+            actualizarMigasPan(ruta);
+            
+            const respuesta = await fetch(`/listar?ruta=${encodeURIComponent(ruta)}`);
+            const elementos = await respuesta.json();
+            const lista = document.getElementById('listaArchivos');
+            
+            lista.innerHTML = elementos.length === 0 
+                ? '<li class="list-group-item">(Carpeta vacía)</li>' 
+                : '';
+            
+            elementos.forEach(item => {
+                const elementoLista = document.createElement('li');
+                elementoLista.className = 'list-group-item d-flex justify-content-between';
+                
+                elementoLista.innerHTML = `
+                <span style='cursor:pointer' ${item.tipo === 'directorio' ? `onclick="navegarA('${item.ruta}')" class='fw-bold'` : ''}>
+                    ${item.nombre}
+                </span>
+                <span class="btn-group btn-group-sm">
+                    <button class='btn btn-outline-secondary' onclick="copiarAlPortapapeles(event, '${item.ruta}')">Copiar</button>
+                    <button class='btn btn-outline-info' onclick="renombrarElemento('${item.ruta}')">Renombrar</button>
+                    <button class='btn btn-outline-primary' onclick="abrirModalCorreo('${item.ruta}')">Enviar</button>
+                    <button class='btn btn-outline-danger' onclick="eliminarElemento(event, '${item.ruta}')">Eliminar</button>
+                </span>
+                `;
+                
+                lista.appendChild(elementoLista);
+            });
+        }
 
-async function uploadFiles() {
-  const input = document.getElementById('fileInput');
-  if (!input.files.length) return showMessage('Selecciona archivos', true);
-  const form = new FormData();
-  [...input.files].forEach(f => form.append('files', f));
-  await fetch(`/upload?path=${currentPath}`, { method: 'POST', body: form });
-  showMessage('Subido');
-  navigateTo(currentPath);
-}
+        async function subirArchivos() {
+            const selector = document.getElementById('selectorArchivos');
+            if (!selector.files.length) {
+                mostrarMensaje('Selecciona al menos un archivo', true);
+                return;
+            }
+            
+            const formulario = new FormData();
+            [...selector.files].forEach(archivo => formulario.append('archivos', archivo));
+            
+            await fetch(`/subir?ruta=${rutaActual}`, {
+                method: 'POST',
+                body: formulario
+            });
+            
+            mostrarMensaje('Archivos subidos correctamente');
+            navegarA(rutaActual);
+        }
 
-async function createFolder() {
-  const name = prompt('Nombre de carpeta:');
-  if (!name) return;
-  await fetch('/mkdir', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, path: currentPath })
-  });
-  navigateTo(currentPath);
-}
+        async function crearCarpeta() {
+            const nombre = prompt('Nombre de la nueva carpeta:');
+            if (!nombre) return;
+            
+            await fetch('/crear-carpeta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                nombre, 
+                ruta: rutaActual 
+                })
+            });
+            
+            navegarA(rutaActual);
+        }
 
-function copyToClipboard(e, path) {
-  e.stopPropagation();
-  clipboard = path;
-  document.getElementById('pasteBtn').disabled = false;
-  showMessage('Copiado');
-}
+        function copiarAlPortapapeles(evento, ruta) {
+            evento.stopPropagation();
+            portapapeles = ruta;
+            document.getElementById('botonPegar').disabled = false;
+            mostrarMensaje('Elemento copiado');
+        }
 
-async function pasteItem() {
-  if (!clipboard) return;
-  const name = clipboard.split('/').pop();
-  const newName = prompt('Nuevo nombre:', name) || name;
-  const dest = currentPath ? `${currentPath}/${newName}` : newName;
-  await fetch('/copy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ srcPath: clipboard, destPath: dest })
-  });
-  clipboard = null;
-  document.getElementById('pasteBtn').disabled = true;
-  navigateTo(currentPath);
-}
+        async function pegarElemento() {
+            if (!portapapeles) return;
+            
+            const nombreOriginal = portapapeles.split('/').pop();
+            const nuevoNombre = prompt('Nombre para la copia:', nombreOriginal) || nombreOriginal;
+            const rutaDestino = rutaActual ? `${rutaActual}/${nuevoNombre}` : nuevoNombre;
+            
+            await fetch('/copiar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                rutaOrigen: portapapeles, 
+                rutaDestino: rutaDestino 
+                })
+            });
+            
+            portapapeles = null;
+            document.getElementById('botonPegar').disabled = true;
+            navegarA(rutaActual);
+        }
 
-async function deleteItem(e, path) {
-  e.stopPropagation();
-  if (!confirm('¿Eliminar?')) return;
-  await fetch('/delete', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path })
-  });
-  navigateTo(currentPath);
-}
+        async function eliminarElemento(evento, ruta) {
+            evento.stopPropagation();
+            if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
+            
+            await fetch('/eliminar', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ruta })
+            });
+            
+            navegarA(rutaActual);
+        }
 
-async function renameItem(oldPath) {
-  const name = oldPath.split('/').pop();
-  const newName = prompt('Nuevo nombre:', name);
-  if (!newName || newName === name) return;
-  const newPath = oldPath.replace(/[^/]+$/, newName);
-  await fetch('/rename', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ oldPath, newPath })
-  });
-  navigateTo(currentPath);
-}
+        async function renombrarElemento(rutaVieja) {
+            const nombreActual = rutaVieja.split('/').pop();
+            const nuevoNombre = prompt('Nuevo nombre:', nombreActual);
+            
+            if (!nuevoNombre || nuevoNombre === nombreActual) return;
+            
+            const rutaNueva = rutaVieja.replace(/[^/]+$/, nuevoNombre);
+            
+            await fetch('/renombrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                rutaAntigua: rutaVieja, 
+                rutaNueva: rutaNueva 
+                })
+            });
+            
+            navegarA(rutaActual);
+        }
 
-function openEmailModal(filePath) {
-  selectedFileForEmail = `files/${filePath}`; // <- prefijo correcto agregado
-  document.getElementById('recipientEmail').value = '';
-  document.getElementById('emailMessage').value = '';
-  emailModal.show();
-}
+        function abrirModalCorreo(rutaArchivo) {
+        
+            archivoSeleccionadoCorreo = `archivos/${rutaArchivo}`;
+            document.getElementById('correoDestinatario').value = '';
+            document.getElementById('mensajeCorreo').value = '';
+            modalCorreo.show();
+        }
+        async function enviarArchivoPorCorreo() {
+            const correo = document.getElementById('correoDestinatario').value;
+            const mensaje = document.getElementById('mensajeCorreo').value;
+            
+            if (!correo) {
+                mostrarMensaje('Debes ingresar un correo electrónico', true);
+                return;
+            }
 
-async function sendFileByEmail() {
-  const email = document.getElementById('recipientEmail').value;
-  const message = document.getElementById('emailMessage').value;
-  if (!email) return showMessage('Falta el correo', true);
+            try {
+                const respuesta = await fetch('/enviar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'  
+                },
+                body: JSON.stringify({
+                    correoDestinatario: correo,
+                    mensaje: mensaje,
+                    rutaArchivo: archivoSeleccionadoCorreo
+                })
+                });
 
-  const form = new FormData();
-  form.append('filePath', selectedFileForEmail);
-  form.append('emailDestinatario', email);
-  form.append('message', message);
+                const resultado = await respuesta.json();
+                
+                if (!respuesta.ok) {
+                throw new Error(resultado.error || 'Error desconocido');
+                }
+                
+                mostrarMensaje(resultado.message || 'Correo enviado correctamente');
+                modalCorreo.hide();
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarMensaje('Error al enviar: ' + error.message, true);
+            }
+        }
 
-  try {
-    const res = await fetch('/send-file', { method: 'POST', body: form });
-    if (!res.ok) throw new Error(await res.text());
-    showMessage('Correo enviado');
-    emailModal.hide();
-  } catch (err) {
-    showMessage('Error: ' + err.message, true);
-  }
-}
+        function mostrarMensaje(texto, esError = false) {
+            const contenedor = document.getElementById('mensajeEstado');
+            contenedor.textContent = texto;
+            contenedor.className = esError ? 'text-danger' : 'text-success';
+            setTimeout(() => contenedor.textContent = '', 3000);
+        }
 
-function showMessage(msg, error = false) {
-  const m = document.getElementById('statusMessage');
-  m.textContent = msg;
-  m.className = error ? 'text-danger' : 'text-success';
-  setTimeout(() => m.textContent = '', 3000);
-}
+        document.addEventListener('DOMContentLoaded', () => navegarA());
+    </script>
 
-document.addEventListener('DOMContentLoaded', () => navigateTo());
-</script>
-<a href="/logout">Cerrar sesión</a>
+    <footer class="bg-body-tertiary text-center text-lg-start">
+        <div class="text-center p-3" style="background-color: rgba(12, 179, 221, 0.418);">
+            © 2020 Copyright:
+            <a class="text-body" href="https://mdbootstrap.com/">MDBootstrap.com</a>
+        </div>
+        </footer>
 </body>
 </html>

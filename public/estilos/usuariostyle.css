@@ -1,0 +1,53 @@
+  body {
+            font-family: 'Inter', sans-serif; /* Usamos Inter como fuente principal */
+            background-color: #f8f9fa; /* Color de fondo claro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Asegura que ocupe al menos toda la altura de la ventana */
+            margin: 0;
+        }
+        .login-container {
+            background-color: #ffffff;
+            padding: 2.5rem; /* Aumentamos el padding */
+            border-radius: 1rem; /* Bordes más redondeados */
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); /* Sombra suave */
+            width: 100%;
+            max-width: 450px; /* Ancho máximo para el formulario */
+        }
+        .login-container h1 {
+            text-align: center;
+            margin-bottom: 2rem; /* Más espacio debajo del título */
+            color: #343a40; /* Color de texto oscuro */
+            font-weight: 700; /* Negrita para el título */
+        }
+        .form-label {
+            font-weight: 500; /* Ligeramente más negrita para las etiquetas */
+            color: #495057;
+        }
+        .btn-primary {
+            background-color: #007bff; /* Color azul primario de Bootstrap */
+            border-color: #007bff;
+            padding: 0.75rem 1.5rem; /* Padding más generoso para el botón */
+            font-size: 1.1rem; /* Tamaño de fuente del botón */
+            border-radius: 0.5rem; /* Bordes redondeados para el botón */
+            width: 100%; /* Botón de ancho completo */
+        }
+        .btn-primary:hover {
+            background-color: #0056b3; /* Tono más oscuro al pasar el ratón */
+            border-color: #0056b3;
+        }
+        .error-message {
+            color: #dc3545; /* Rojo de error de Bootstrap */
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        .text-center a {
+            color: #007bff; /* Color de enlace primario */
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .text-center a:hover {
+            text-decoration: underline;
+        }

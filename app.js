@@ -1,163 +1,206 @@
-// Explorador de archivos simple con Express
+// app.js
 const express = require('express');
-const session = require('express-session');
+const sesion = require('express-session');
 const bcrypt = require('bcrypt');
 const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
-const bodyParser = require('body-parser');
+const analizadorCuerpo = require('body-parser');
 const mysql = require('mysql2');
 const nodemailer = require('nodemailer');
 
-const app = express();
-const PORT = 8080;
-const BASE_DIR = path.join(__dirname, 'files');
+const aplicacion = express();
+const PUERTO = 8080;
+const DIR_BASE = path.join(__dirname, 'archivos');
 
-// Base de datos
-const pool = mysql.createPool({
-  host: 'localhost', user: 'root', password: '', database: 'clientes'
+// Configuración de la base de datos
+const grupoConexiones = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'clientes'
 });
 
-// Sesiones y middlewares
-app.use(express.static('public'));
-app.use(bodyParser.json());
-app.use(express.json());
-app.use(session({ secret: 'mi_secreto', resave: false, saveUninitialized: false }));
+// Middlewares y sesiones
+aplicacion.use(express.static('public'));
+aplicacion.use(analizadorCuerpo.json());
+aplicacion.use(express.json());
+aplicacion.use(sesion({ 
+  secret: 'mi_secreto', 
+  resave: false, 
+  saveUninitialized: false 
+}));
 
-// Multer (subidas)
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const dest = path.join(BASE_DIR, req.query.path || '');
-    await fs.mkdir(dest, { recursive: true });
-    cb(null, dest);
+// Configuración para subida de archivos
+const almacenamiento = multer.diskStorage({
+  destination: async (solicitud, archivo, callback) => {
+    const destino = path.join(DIR_BASE, solicitud.query.ruta || '');
+    await fs.mkdir(destino, { recursive: true });
+    callback(null, destino);
   },
-  filename: (req, file, cb) => cb(null, file.originalname)
+  filename: (solicitud, archivo, callback) => callback(null, archivo.originalname)
 });
-const upload = multer({ storage });
+const subida = multer({ storage: almacenamiento });
 
-// Ruta principal
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/usuario.html'));
+// Rutas principales
+aplicacion.get('/', (solicitud, respuesta) => {
+  respuesta.sendFile(__dirname + '/public/usuario.html');
+});
 
-// Registro
-app.post('/registrar', async (req, res) => {
-  const { correo, password } = req.body;
+// Registro de usuario
+aplicacion.post('/registrar', async (solicitud, respuesta) => {
+  const { correo, password } = solicitud.body;
   try {
-    const hashed = await bcrypt.hash(password, 10);
-    const [r] = await pool.promise().query('INSERT INTO cliente (correo, password) VALUES (?, ?)', [correo, hashed]);
-    res.json({ id: r.insertId, correo });
-  } catch (e) {
-    res.status(400).json({ error: 'Correo ya registrado' });
+    const hashContrasena = await bcrypt.hash(password, 10);
+    const [resultado] = await grupoConexiones.promise().query(
+      'INSERT INTO cliente (correo, password) VALUES (?, ?)', 
+      [correo, hashContrasena]
+    );
+    respuesta.json({ id: resultado.insertId, correo });
+  } catch (error) {
+    respuesta.status(400).json({ error: 'Este correo ya está registrado' });
   }
 });
 
-// Login
-app.post('/login', async (req, res) => {
-  const { correo, password } = req.body;
-  const [rows] = await pool.promise().query('SELECT * FROM cliente WHERE correo = ?', [correo]);
-  if (!rows.length || !(await bcrypt.compare(password, rows[0].password))) return res.status(401).json({ error: 'Credenciales inválidas' });
-  req.session.userId = rows[0].id;
-  res.json({ success: true });
+// Inicio de sesión
+aplicacion.post('/login', async (solicitud, respuesta) => {
+  const { correo, password } = solicitud.body;
+  const [filas] = await grupoConexiones.promise().query(
+    'SELECT * FROM cliente WHERE correo = ?', 
+    [correo]
+  );
+  
+  if (!filas.length || !(await bcrypt.compare(password, filas[0].password))) {
+    return respuesta.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+  }
+  
+  solicitud.session.idUsuario = filas[0].id;
+  respuesta.json({ exito: true });
 });
 
-// Logout
-app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/'); });
+// Cierre de sesión
+aplicacion.get('/logout', (solicitud, respuesta) => {
+  solicitud.session.destroy();
+  respuesta.redirect('/');
+});
 
-// Listar archivos
-app.get('/list', async (req, res) => {
-  const dir = path.join(BASE_DIR, req.query.path || '');
+// Listar contenido de directorio
+aplicacion.get('/listar', async (solicitud, respuesta) => {
+  const directorio = path.join(DIR_BASE, solicitud.query.ruta || '');
   try {
-    const contenido = await fs.readdir(dir, { withFileTypes: true });
-    res.json(contenido.map(i => ({ name: i.name, type: i.isDirectory() ? 'directory' : 'file', path: (req.query.path || '') + '/' + i.name })));
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    const elementos = await fs.readdir(directorio, { withFileTypes: true });
+    respuesta.json(elementos.map(item => ({
+      nombre: item.name,
+      tipo: item.isDirectory() ? 'directorio' : 'archivo',
+      ruta: (solicitud.query.ruta || '') + '/' + item.name
+    })));
+  } catch (error) {
+    respuesta.status(500).json({ error: error.message });
+  }
 });
 
 // Subir archivos
-app.post('/upload', upload.array('files'), (req, res) => res.json({ success: true }));
+aplicacion.post('/subir', subida.array('archivos'), (solicitud, respuesta) => {
+  respuesta.json({ exito: true });
+});
 
-// Crear carpeta
-app.post('/mkdir', async (req, res) => {
-  const ruta = path.join(BASE_DIR, req.body.path || '', req.body.name);
-  await fs.mkdir(ruta, { recursive: true });
-  res.json({ success: true });
+// Crear nueva carpeta
+aplicacion.post('/crear-carpeta', async (solicitud, respuesta) => {
+  const rutaCompleta = path.join(DIR_BASE, solicitud.body.ruta || '', solicitud.body.nombre);
+  await fs.mkdir(rutaCompleta, { recursive: true });
+  respuesta.json({ exito: true });
 });
 
 // Eliminar archivo o carpeta
-app.delete('/delete', async (req, res) => {
-  const ruta = path.join(BASE_DIR, req.body.path);
-  await fs.rm(ruta, { recursive: true, force: true });
-  res.json({ success: true });
+aplicacion.delete('/eliminar', async (solicitud, respuesta) => {
+  const rutaEliminar = path.join(DIR_BASE, solicitud.body.ruta);
+  await fs.rm(rutaEliminar, { recursive: true, force: true });
+  respuesta.json({ exito: true });
 });
 
-// Copiar
-app.post('/copy', async (req, res) => {
-  const src = path.join(BASE_DIR, req.body.srcPath);
-  const dest = path.join(BASE_DIR, req.body.destPath);
-  await copiar(src, dest);
-  res.json({ success: true });
+// Copiar elementos
+aplicacion.post('/copiar', async (solicitud, respuesta) => {
+  const origen = path.join(DIR_BASE, solicitud.body.rutaOrigen);
+  const destino = path.join(DIR_BASE, solicitud.body.rutaDestino);
+  await copiarRecursivo(origen, destino);
+  respuesta.json({ exito: true });
 });
 
-async function copiar(src, dest) {
-  const stat = await fs.stat(src);
-  if (stat.isDirectory()) {
-    await fs.mkdir(dest, { recursive: true });
-    const files = await fs.readdir(src);
-    for (const file of files) {
-      await copiar(path.join(src, file), path.join(dest, file));
+// Función auxiliar para copia recursiva
+async function copiarRecursivo(origen, destino) {
+  const estadisticas = await fs.stat(origen);
+  if (estadisticas.isDirectory()) {
+    await fs.mkdir(destino, { recursive: true });
+    const archivos = await fs.readdir(origen);
+    for (const archivo of archivos) {
+      await copiarRecursivo(path.join(origen, archivo), path.join(destino, archivo));
     }
   } else {
-    await fs.copyFile(src, dest);
+    await fs.copyFile(origen, destino);
   }
 }
 
-// Renombrar
-app.post('/rename', async (req, res) => {
-  const oldPath = path.join(BASE_DIR, req.body.oldPath);
-  const newPath = path.join(BASE_DIR, req.body.newPath);
-  await fs.rename(oldPath, newPath);
-  res.json({ success: true });
+// Renombrar archivo o carpeta
+aplicacion.post('/renombrar', async (solicitud, respuesta) => {
+  const rutaVieja = path.join(DIR_BASE, solicitud.body.rutaAntigua);
+  const rutaNueva = path.join(DIR_BASE, solicitud.body.rutaNueva);
+  await fs.rename(rutaVieja, rutaNueva);
+  respuesta.json({ exito: true });
 });
 
 // Enviar por correo
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: 'ayoubkhoudrane.daw@gmail.com',
-      pass: 'erneaoroqdtijkfv' // Asegúrate que esté sin espacios y que sea una contraseña de aplicación válida
-    }
-  });
-  
-  app.post('/send-file', upload.none(), async (req, res) => {
-    const { emailDestinatario, message, filePath } = req.body;
-    try {
-      console.log('Enviando archivo desde:', filePath);
-  
-      // Verifica si el archivo existe
-      const exists = await fs.stat(filePath).catch(() => null);
-      if (!exists) {
-        console.error('Archivo no encontrado:', filePath);
-        return res.status(404).send('Archivo no encontrado');
-      }
-  
-      const content = await fs.readFile(filePath);
-  
-      await transporter.sendMail({
-        from: 'ayoubkhoudrane.daw@gmail.com',
-        to: emailDestinatario,
-        subject: 'Archivo compartido',
-        text: message || 'Te envío este archivo',
-        attachments: [
-          {
-            filename: path.basename(filePath),
-            content
-          }
-        ]
-      });
-  
-      res.send('Correo enviado');
-    } catch (e) {
-      console.error('Error al enviar correo:', e);
-      res.status(500).send('Error al enviar el correo: ' + e.message);
-    }
-  });
+  service: 'gmail',
+  auth: {
+    user: 'ayoubkhoudrane.daw@gmail.com',
+    pass: 'erneaoroqdtijkfv' 
+  }
+});
 
-app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
+// Enviar archivo por correo
+aplicacion.post('/enviar', express.json(), async (req, res) => {  
+  const { correoDestinatario, mensaje, rutaArchivo } = req.body;
+  
+  try {
+    // Construye la ruta absoluta al archivo
+    const rutaAbsoluta = path.join(__dirname, rutaArchivo);
+
+    // Verifica si el archivo existe
+    try {
+      await fs.access(rutaAbsoluta);
+    } catch {
+      console.error('Archivo no encontrado:', rutaAbsoluta);
+      return res.status(404).json({ error: 'Archivo no encontrado' });
+    }
+
+    // Configura el correo
+    const mailOptions = {
+      from: 'ayoubkhoudrane.daw@gmail.com',
+      to: correoDestinatario,
+      subject: 'Archivo compartido',
+      text: mensaje || 'Te envío este archivo',
+      attachments: [
+        {
+          filename: path.basename(rutaAbsoluta),
+          path: rutaAbsoluta  
+        }
+      ]
+    };
+
+    // Envía el correo
+    await transporter.sendMail(mailOptions);
+    res.json({ success: true, message: 'Correo enviado correctamente' });
+    
+  } catch (error) {
+    console.error('Error al enviar correo:', error);
+    res.status(500).json({ 
+      error: 'Error al enviar el correo',
+      details: error.message 
+    });
+  }
+});
+
+// Iniciar servidor
+aplicacion.listen(PUERTO, () => {
+  console.log(`Servidor funcionando en http://localhost:${PUERTO}`);
+});

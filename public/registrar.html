@@ -2,36 +2,77 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Usuario</title>
+    <!-- Enlace a Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Fuente de Google Fonts para un toque más moderno -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="estilos/registrostyle.css">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 20px auto; padding: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input { width: 100%; padding: 8px; margin-bottom: 10px; }
-        button { background: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+        
     </style>
 </head>
 <body>
-    <h1>Registro de Usuario</h1>
-    <form id="registroForm">
-        <div class="form-group">
-            <label>Correo electrónico:</label>
-            <input type="email" id="correo" required>
-        </div>
-        <div class="form-group">
-            <label>Contraseña:</label>
-            <input type="password" id="password" required>
-        </div>
-        <button type="submit">Registrarse</button>
-    </form>
-    <p>¿Ya tienes cuenta? <a href="/usuario.html">Iniciar sesión</a></p>
+    <div class="register-container">
+        <h1>Registro de Usuario</h1>
+        <form id="registroForm">
+            <div class="mb-3">
+                <label for="correo" class="form-label">Correo electrónico:</label>
+                <input type="email" id="correo" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña:</label>
+                <input type="password" id="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Registrarse</button>
+        </form>
+        <div id="message-display" class="message-box"></div>
+        <p class="text-center mt-4">¿Ya tienes cuenta? <a href="/usuario.html">Iniciar sesión</a></p>
+    </div>
 
+    <!-- Modal para mensajes (reemplaza alert()) -->
+    <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="infoModalLabel">Mensaje</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="infoModalBody">
+                    <!-- El contenido del mensaje se insertará aquí -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enlace a Bootstrap 5 JS (bundle incluye Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Inicializar el modal de Bootstrap
+        const infoModal = new bootstrap.Modal(document.getElementById('infoModal'));
+        const infoModalBody = document.getElementById('infoModalBody');
+        const messageDisplay = document.getElementById('message-display'); // Para mensajes temporales en la página
+
+        function showMessage(message, isError = false) {
+            infoModalBody.textContent = message;
+            infoModal.show();
+
+        }
+
         document.getElementById('registroForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const correo = document.getElementById('correo').value;
             const password = document.getElementById('password').value;
+
+            // Limpiar mensajes anteriores
+            messageDisplay.textContent = '';
 
             try {
                 const response = await fetch('/registrar', {
@@ -45,14 +86,16 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    alert('Registro exitoso!');
-                    window.location.href = '/';
+                    showMessage('Registro exitoso!', false);
+                    setTimeout(() => {
+                        window.location.href = '/'; 
+                    }, 2000); 
                 } else {
-                    alert(data.error || 'Error en el registro');
+                    showMessage(data.error || 'Error en el registro', true);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al conectar con el servidor');
+                showMessage('Error al conectar con el servidor. Por favor, inténtalo de nuevo más tarde.', true);
             }
         });
     </script>

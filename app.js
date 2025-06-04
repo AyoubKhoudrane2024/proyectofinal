@@ -8,6 +8,7 @@ const multer = require('multer');
 const analizadorCuerpo = require('body-parser');
 const mysql = require('mysql2');
 const nodemailer = require('nodemailer');
+const archiver = require('archiver'); // para comprimir y descaragr carpetas
 
 const aplicacion = express();
 const PUERTO = 8080;
@@ -126,6 +127,8 @@ aplicacion.post('/copiar', async (solicitud, respuesta) => {
   respuesta.json({ exito: true });
 });
 
+
+
 // Función auxiliar para copia recursiva
 async function copiarRecursivo(origen, destino) {
   const estadisticas = await fs.stat(origen);
@@ -198,6 +201,27 @@ aplicacion.post('/enviar', express.json(), async (req, res) => {
       details: error.message 
     });
   }
+});
+
+// Descargar archivos o directorios
+aplicacion.get('/descargar', async (req, res) => {
+    const ruta = path.join(__dirname, 'archivos', req.query.ruta);
+    
+    try {
+        const stats = await fs.stat(ruta);
+        
+        if (stats.isDirectory()) {
+            const zip = archiver('zip');
+            res.attachment(`${path.basename(ruta)}.zip`);
+            zip.pipe(res);
+            zip.directory(ruta, false);
+            zip.finalize();
+        } else {
+            res.download(ruta);
+        }
+    } catch {
+        res.status(404).send('Archivo no encontrado');
+    }
 });
 
 // Iniciar servidor

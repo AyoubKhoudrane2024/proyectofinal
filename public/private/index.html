@@ -181,6 +181,8 @@
                     <button class='btn btn-outline-secondary' onclick="copiarAlPortapapeles(event, '${item.ruta}')">Copiar</button>
                     <button class='btn btn-outline-info' onclick="renombrarElemento('${item.ruta}')">Renombrar</button>
                     <button class='btn btn-outline-primary' onclick="abrirModalCorreo('${item.ruta}')">Enviar</button>
+                     <button class='btn btn-outline-success' onclick="descargarArchivo('${item.ruta}')">Descargar</button>
+                    
                     <button class='btn btn-outline-danger' onclick="eliminarElemento(event, '${item.ruta}')">Eliminar</button>
                 </span>
                 `;
@@ -284,6 +286,12 @@
             
             navegarA(rutaActual);
         }
+
+    function descargarArchivo(ruta) {
+    const link = document.createElement('a');
+    link.href = `/descargar?ruta=${encodeURIComponent(ruta)}`;
+    link.click();
+}
 
         function abrirModalCorreo(rutaArchivo) {
         

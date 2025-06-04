@@ -16,10 +16,14 @@ const DIR_BASE = path.join(__dirname, 'archivos');
 
 // Configuración de la base de datos
 const grupoConexiones = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'clientes'
+  host: 'b8mv9ddazicrtb7vkq91-mysql.services.clever-cloud.com',
+  user: 'unoes0lyofz3pimy',
+  password: 'sSQR1DX2I0urmag61ZV9',
+  database: 'b8mv9ddazicrtb7vkq91',
+  Port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 // Middlewares y sesiones

@@ -1,0 +1,116 @@
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const rimraf = require("rimraf");
+const multer = require("multer");
+
+const app = express();
+const PORT = 8080;
+const BASE_DIR = path.join(__dirname, "files"); // Directorio base
+
+// Configuración de multer para subir archivos y carpetas
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(BASE_DIR, req.body.folder || "");
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => cb(null, file.originalname),
+});
+const upload = multer({ storage });
+
+// Middleware para servir archivos estáticos y JSON
+app.use(express.json());
+app.use(express.static("public"));
+
+// Listar archivos y directorios
+app.get("/list", (req, res) => {
+  fs.readdir(BASE_DIR, { withFileTypes: true }, (err, files) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(
+      files.map((file) => ({
+        name: file.name,
+        type: file.isDirectory() ? "directory" : "file",
+      }))
+    );
+  });
+});
+
+// Subir archivos y carpetas
+app.post("/upload", upload.array("files"), (req, res) => {
+  res.json({ message: "Archivos/Carpetas subidos correctamente" });
+});
+
+// Eliminar un archivo o directorio
+app.delete("/delete", (req, res) => {
+  const targetPath = path.join(BASE_DIR, req.body.name);
+  if (!fs.existsSync(targetPath)) {
+    return res.status(404).json({ error: "Archivo/Directorio no encontrado" });
+  }
+  
+  rimraf(targetPath, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Archivo/Directorio eliminado" });
+  });
+});
+
+// Renombrar un archivo o directorio
+app.post("/rename", (req, res) => {
+  const oldPath = path.join(BASE_DIR, req.body.oldName);
+  const newPath = path.join(BASE_DIR, req.body.newName);
+
+  if (!fs.existsSync(oldPath)) {
+    return res.status(404).json({ error: "Archivo/Directorio no encontrado" });
+  }
+
+  if (fs.existsSync(newPath)) {
+    return res.status(400).json({ error: "Ya existe un archivo/directorio con ese nombre" });
+  }
+
+  fs.rename(oldPath, newPath, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Archivo/Directorio renombrado correctamente" });
+  });
+});
+
+// Crear una nueva carpeta
+app.post("/mkdir", (req, res) => {
+  const dirPath = path.join(BASE_DIR, req.body.name);
+  if (fs.existsSync(dirPath)) {
+    return res.status(400).json({ error: "La carpeta ya existe" });
+  }
+  
+  fs.mkdir(dirPath, { recursive: true }, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Carpeta creada correctamente" });
+  });
+});
+
+// Eliminar todo
+app.delete("/clear", (req, res) => {
+    rimraf(BASE_DIR, (err) => {
+      if (err) {
+        console.error("Error al limpiar:", err);
+        return res.status(500).json({ error: "Error al limpiar los archivos" });
+      }
+      
+      // Recrear el directorio base
+      fs.mkdirSync(BASE_DIR, { recursive: true });
+      
+      res.json({ success: true, message: "Todos los archivos y carpetas han sido eliminados." });
+    });
+  });
+  
+  // Asegurar que todas las respuestas son JSON
+  app.use((req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    next();
+  });
+
+
+// Iniciar el servidor
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  // Asegurarse de que el directorio base existe al iniciar
+  fs.mkdirSync(BASE_DIR, { recursive: true });
+});

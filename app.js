@@ -14,29 +14,28 @@ const aplicacion = express();
 const PUERTO = 8080;
 const DIR_BASE = path.join(__dirname, 'archivos');
 
-// Configuración de la base de datos
+// configuración de la base de datos
 const grupoConexiones = mysql.createPool({
-  host: 'b8mv9ddazicrtb7vkq91-mysql.services.clever-cloud.com',
-  user: 'unoes0lyofz3pimy',
-  password: 'sSQR1DX2I0urmag61ZV9',
-  database: 'b8mv9ddazicrtb7vkq91',
-  Port: 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'clientes'
+
 });
 
 // Middlewares y sesiones
+
 aplicacion.use(express.static('public'));
 aplicacion.use(analizadorCuerpo.json());
 aplicacion.use(express.json());
+// utilizar las sesiones para guardar informacion del usuario logueado.
 aplicacion.use(sesion({ 
   secret: 'mi_secreto', 
   resave: false, 
   saveUninitialized: false 
 }));
 
-// Configuración para subida de archivos
+// configuracion subir  archivo
 const almacenamiento = multer.diskStorage({
   destination: async (solicitud, archivo, callback) => {
     const destino = path.join(DIR_BASE, solicitud.query.ruta || '');
@@ -47,12 +46,12 @@ const almacenamiento = multer.diskStorage({
 });
 const subida = multer({ storage: almacenamiento });
 
-// Rutas principales
+// Ruta principal
 aplicacion.get('/', (solicitud, respuesta) => {
   respuesta.sendFile(__dirname + '/public/usuario.html');
 });
 
-// Registro de usuario
+// registrar el usuario 
 aplicacion.post('/registrar', async (solicitud, respuesta) => {
   const { correo, password } = solicitud.body;
   try {
@@ -74,7 +73,7 @@ aplicacion.post('/login', async (solicitud, respuesta) => {
     'SELECT * FROM cliente WHERE correo = ?', 
     [correo]
   );
-  
+  // comprobar que el usuario existe 
   if (!filas.length || !(await bcrypt.compare(password, filas[0].password))) {
     return respuesta.status(401).json({ error: 'Usuario o contraseña incorrectos' });
   }
@@ -83,13 +82,13 @@ aplicacion.post('/login', async (solicitud, respuesta) => {
   respuesta.json({ exito: true });
 });
 
-// Cierre de sesión
+// Cierre de sesión 
 aplicacion.get('/logout', (solicitud, respuesta) => {
   solicitud.session.destroy();
   respuesta.redirect('/');
 });
 
-// Listar contenido de directorio
+// listar contenido de directorio
 aplicacion.get('/listar', async (solicitud, respuesta) => {
   const directorio = path.join(DIR_BASE, solicitud.query.ruta || '');
   try {
@@ -104,22 +103,22 @@ aplicacion.get('/listar', async (solicitud, respuesta) => {
   }
 });
 
-// Subir archivos
+// subir archivos
 aplicacion.post('/subir', subida.array('archivos'), (solicitud, respuesta) => {
   respuesta.json({ exito: true });
 });
 
-// Crear nueva carpeta
-aplicacion.post('/crear-carpeta', async (solicitud, respuesta) => {
+// crear nueva carpeta
+aplicacion.post('/crearCarpeta', async (solicitud, respuesta) => {
   const rutaCompleta = path.join(DIR_BASE, solicitud.body.ruta || '', solicitud.body.nombre);
   await fs.mkdir(rutaCompleta, { recursive: true });
   respuesta.json({ exito: true });
 });
 
-// Eliminar archivo o carpeta
+// eliminar archivo o carpeta
 aplicacion.delete('/eliminar', async (solicitud, respuesta) => {
-  const rutaEliminar = path.join(DIR_BASE, solicitud.body.ruta);
-  await fs.rm(rutaEliminar, { recursive: true, force: true });
+  const eleminarCarpeta = path.join(DIR_BASE, solicitud.body.ruta);
+  await fs.rm(eleminarCarpeta, { recursive: true, force: true });
   respuesta.json({ exito: true });
 });
 
@@ -133,9 +132,10 @@ aplicacion.post('/copiar', async (solicitud, respuesta) => {
 
 
 
-// Función auxiliar para copia recursiva
+// Copia de forma recursiva un archivo o carpeta y todo su contenido desde una ruta origen a una ruta destino.
 async function copiarRecursivo(origen, destino) {
-  const estadisticas = await fs.stat(origen);
+  //comprobar el tipo de archivo
+  const estadisticas = await fs.stat(origen); 
   if (estadisticas.isDirectory()) {
     await fs.mkdir(destino, { recursive: true });
     const archivos = await fs.readdir(origen);
@@ -147,7 +147,7 @@ async function copiarRecursivo(origen, destino) {
   }
 }
 
-// Renombrar archivo o carpeta
+// renombrar archivo o carpeta
 aplicacion.post('/renombrar', async (solicitud, respuesta) => {
   const rutaVieja = path.join(DIR_BASE, solicitud.body.rutaAntigua);
   const rutaNueva = path.join(DIR_BASE, solicitud.body.rutaNueva);
@@ -160,7 +160,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'ayoubkhoudrane.daw@gmail.com',
-    pass: 'erneaoroqdtijkfv' 
+    pass: 'erneaoroqdtijkfv'  // borrame 
   }
 });
 
@@ -207,7 +207,7 @@ aplicacion.post('/enviar', express.json(), async (req, res) => {
   }
 });
 
-// Descargar archivos o directorios
+// descargar archivos o directorios
 aplicacion.get('/descargar', async (req, res) => {
     const ruta = path.join(__dirname, 'archivos', req.query.ruta);
     
@@ -228,7 +228,7 @@ aplicacion.get('/descargar', async (req, res) => {
     }
 });
 
-// Iniciar servidor
+// iniciar servidor
 aplicacion.listen(PUERTO, () => {
   console.log(`Servidor funcionando en http://localhost:${PUERTO}`);
 });

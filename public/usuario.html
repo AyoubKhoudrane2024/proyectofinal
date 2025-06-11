@@ -29,7 +29,7 @@
         <p class="text-center mt-4">¿No tienes cuenta? <a href="/registrar.html">Regístrate aquí</a></p>
     </div>
 
-    <!-- Enlace a Bootstrap 5 JS (bundle incluye Popper) -->
+   
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -39,7 +39,7 @@
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('error-message');
 
-            // Limpiar mensaje de error anterior
+          
             errorMessage.textContent = '';
 
             try {
@@ -56,11 +56,11 @@
                 if (response.ok) {
                     window.location.href = '/private/index.html';
                 } else {
-                    errorMessage.textContent = data.error || 'Error desconocido al iniciar sesión.';
+                    errorMessage.textContent = data.error || 'Error al iniciar sesión.';
                 }
             } catch (error) {
                 console.error('Error:', error);
-                errorMessage.textContent = 'Error al conectar con el servidor. Por favor, inténtalo de nuevo más tarde.';
+                errorMessage.textContent = 'Error al conectar con el servidor.';
             }
         });
     </script>

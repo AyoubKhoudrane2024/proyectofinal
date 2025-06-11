@@ -1,2 +1,0 @@
-install : 
-npm install bcrypt mysql2 express body-parser

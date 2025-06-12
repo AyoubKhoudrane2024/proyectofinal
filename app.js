@@ -12,9 +12,24 @@ const archiver = require('archiver'); // para comprimir y descaragr carpetas
 
 const aplicacion = express();
 const PUERTO = 8080;
-const DIR_BASE = path.join(__dirname, 'archivos');
+const DIR_BASE = path.join(__dirname, 'archivos'); // donde se guardan los archivos y las carpetas 
 
-// configuración de la base de datos
+// ejercutar el script sql para crear la tabla clientes
+/*
+
+-- Crear base de datos
+CREATE DATABASE IF NOT EXISTS clientes;
+USE clientes;
+
+-- Crear tabla cliente
+CREATE TABLE IF NOT EXISTS cliente (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  correo VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL
+);
+*/ 
+
+// configuracion de la base de datos
 const grupoConexiones = mysql.createPool({
   host: 'localhost',
   user: 'root',
@@ -228,7 +243,7 @@ aplicacion.get('/descargar', async (req, res) => {
     }
 });
 
-// iniciar servidor
+// iniciar el servidor
 aplicacion.listen(PUERTO, () => {
   console.log(`Servidor funcionando en http://localhost:${PUERTO}`);
 });

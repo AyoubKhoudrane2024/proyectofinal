@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <style>
-    html, body {
+    html, body { 
         height: 100%; 
         margin: 0;
         padding: 0;
@@ -132,11 +132,11 @@
   
     <script>
         let rutaActual = '';
-        let portapapeles = null;
+        let portapapeles = null; // ubicación copiar
         let archivoSeleccionadoCorreo = '';
-        const modalCorreo = new bootstrap.Modal('#modalCorreo');
+        const modalCorreo = new bootstrap.Modal('#modalCorreo'); // ventana enviar correo
 
-        function actualizarMigasPan(ruta) {
+        function actualizarMigasPan(ruta) { // para mostrar la ubicacion actual del usario dentro del directorio
             const contenedorMigas = document.getElementById('migasPan');
             contenedorMigas.innerHTML = '';
             const partes = ruta.split('/').filter(p => p);
@@ -156,6 +156,7 @@
         }
 
         async function navegarDir(ruta = '') {
+             // mostrar los archivos y carpetas que hay en esa ruta
             rutaActual = ruta;
             actualizarMigasPan(ruta);
             
@@ -191,6 +192,7 @@
         }
 
         async function subirArchivos() {
+            //enviar archivos al seridor
             const selector = document.getElementById('selectorArchivos');
             if (!selector.files.length) {
                 mostrarMensaje('Selecciona al menos un archivo', true);
@@ -208,7 +210,7 @@
             mostrarMensaje('Archivos subidos correctamente');
             navegarDir(rutaActual);
         }
-
+// solicitar el nombre y crear la carpeta
         async function crearCarpeta() {
             const nombre = prompt('Nombre de la nueva carpeta:');
             if (!nombre) return;
@@ -226,12 +228,12 @@
         }
 
         function copiarAlPortapapeles(evento, ruta) {
-            evento.stopPropagation();
+            evento.stopPropagation(); // Evita que se dispare el clic de abrir
             portapapeles = ruta;
             document.getElementById('botonPegar').disabled = false;
             mostrarMensaje('Elemento copiado');
         }
-
+// crear una copia del archivo/carpeta en la ruta actua
         async function pegarElemento() {
             if (!portapapeles) return;
             
@@ -291,7 +293,7 @@
     link.href = `/descargar?ruta=${encodeURIComponent(ruta)}`;
     link.click();
 }
-
+  // se Abre el formulario para enviar archivo por correo
         function abrirModalCorreo(rutaArchivo) {
         
             archivoSeleccionadoCorreo = `archivos/${rutaArchivo}`;
@@ -350,7 +352,7 @@
 
     <footer class="bg-body-tertiary text-center text-lg-start">
         <div class="text-center p-3" style="background-color: rgba(12, 179, 221, 0.418);">
-            © 2020 Copyright:
+            © 2025 Copyright:
             <a class="text-body" href="https://santiagohernandez.aeducar.es/">santiagohernandez</a>
         </div>
         </footer>
